@@ -47,9 +47,12 @@ ggplot(data = df,aes(as.factor(children),charges)) + geom_boxplot(fill = c(2:7))
 
 pairs.panels(df[c("age" ,"bmi", "children","smoker" , "charges","charges_log")])
 
+# linear model 
+# charges_log=b0+b1*age+b2*age*smoker
 Lin_model <- lm(charges_log ~ age * smoker , data = df)
 summary(Lin_model)
 
+#creation of train and test data
 df_train <- round(0.75 * nrow(df))
 train_indices <- sample(1:nrow(df), df_train)
 df_train <- df[train_indices, ]
@@ -62,6 +65,7 @@ Lim_rmse <- sqrt(mean(df_test$residuals^2))
 
 ### Model Performance
 
+#Charges vs predicted
 ggplot(df_test, aes(x = prediction, y = charges)) + 
   geom_point(color = "blue") + 
   geom_abline(color = "red") +
@@ -70,7 +74,7 @@ ggplot(df_test, aes(x = prediction, y = charges)) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 
-
+# residual vs predicted
 ggplot(data = df_test, aes(x = prediction, y = residuals)) +
   geom_pointrange(aes(ymin = 0, ymax = residuals), color = "blue", alpha = 0.7) +
   geom_hline(yintercept = 0, linetype = 3, color = "red") +
@@ -78,11 +82,6 @@ ggplot(data = df_test, aes(x = prediction, y = residuals)) +
   ylab("Residuals") + xlab("Predicted Charges")+
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
-
-  
-  
-  
-
 
 
 
