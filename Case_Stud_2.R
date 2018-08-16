@@ -11,7 +11,6 @@ library("ggplot2")
 library("psych")
 library("randomForest")
 library("dplyr")
-library("ctree")
 
 df <- read.csv("insurance.csv")
 df$charges_log=log(df$charges)
@@ -89,7 +88,7 @@ ggplot(data = df_test, aes(x = prediction, y = residuals)) +
 
 
 
-train_rf <- randomForest(charges ~ ., df, ntree=600, na.action = na.roughfix)
+train_rf <- randomForest(charges ~ ., df, ntree=100, na.action = na.roughfix)
 print(train_rf)
 test_tree <- ctree(exp(charges) ~ ., data=df)
 plot(test_tree, type="simple")

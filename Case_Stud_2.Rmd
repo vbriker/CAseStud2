@@ -10,6 +10,7 @@ output: html_document
 
 #### Dataset: Medical Cost Personal Datasets
 #### Link: https://www.kaggle.com/mirichoi0218/insurance
+#### Github: https://github.com/vbriker/CAseStud2
 
 ### Loading of data and needed libraries
 ```{r, echo=TRUE}
@@ -19,6 +20,7 @@ library("randomForest")
 library("caret")
 library("dplyr")
 library("DAAG")
+library("party")
 df <- read.csv("insurance.csv")
 str(df)
 df$charges_log <- log(df$charges)
@@ -28,7 +30,7 @@ df$charges_log <- log(df$charges)
 
 
 
-### Our client SEM (Super Expensive Medicine) would like to open up shop in the US and wants to maximize profits by targetting ads in the region it picsk
+### Our client SEM (Super Expensive Medicine) would like to open up shop in the US and wants to maximize profits by targeted ads in the region it decides to move into 
 
 #### First we explorer the variables to gain some insight on how each feature and also find which region has the most chance for profit. 
 ```{r, echo=TRUE}
@@ -69,18 +71,22 @@ ggplot(data = df,aes(as.factor(children),charges)) + geom_boxplot(fill = c(2:7))
 
 #### Gender doesn't appear to have as much affect as expected
 
-#### Child count of 2-3 is best.  Small families 
-
+#### Child count of 3-4 is best.  Large families
 
 
 
 # Test/Train split 
+### Next we split the data to test our models when complete
+
 ```{r, echo=TRUE}
 set.seed(18081)
 df_sample <- sample(nrow(df), 0.7 * nrow(df))
 df_train <- df[df_sample,]
 df_test  <- df[-df_sample,]
 ```
+
+
+# SEM informs us that since this is medical insurance and cost related all methods and decisions must be reviewed by an ethics committee and thus only models types that are interpretable can be used.  For this reason Linear Regressiona and Random forrest were decided apon.
 
 # Linear model 
 ```{r, echo=TRUE}
@@ -148,6 +154,14 @@ print(RF_model)
 ```
 
 ## These scores aren't perfect but may be worth considering over purchasing user data from other site.
+
+
+## An executive at SEM is confused about the whole decision tree / random forest thing and asks for a visual example of what one of these looks like.
+```{r, echo=TRUE}
+fit <- ctree(charges ~ smoker + bmi, data=df)
+plot(fit)
+```
+
 
 
 ## Conclusion:  SEM could target medical insurance ads to potential high cost patients with higher premiums or target low cost patience to save money done with just social media data and light effort.  However for best models additional data will need to be purchased or a developer must be hired to scrap additional data and models will need to be regenerated with this addition information. 
