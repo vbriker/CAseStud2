@@ -1,15 +1,19 @@
 
 
-install.packages("psych")
-install.packages("party")
-install.packages("ggplot2")
+#install.packages("psych")
+#install.packages("party")
+#install.packages("ggplot2")
+#install.packages("dplyr")
+
 
 
 library("ggplot2")
 library("psych")
 library("randomForest")
+library("dplyr")
+library("ctree")
 
-df <- read.csv("D:\\My_Docs\\univer\\DataScience\\Case_Studies\\Case_Study2\\3\\insurance.csv")
+df <- read.csv("insurance.csv")
 df$charges_log=log(df$charges)
 
 head(df, n = 5)
@@ -86,26 +90,6 @@ ggplot(data = df_test, aes(x = prediction, y = residuals)) +
 
 
 train_rf <- randomForest(charges ~ ., df, ntree=600, na.action = na.roughfix)
-
 print(train_rf)
-
-#Call:
-  
-#  randomForest(formula = charges ~ ., data = df, ntree = 600, na.action = na.roughfix) 
-
-#Type of random forest: regression
-
-#Number of trees: 600
-
-#No. of variables tried at each split: 2
-
-
-#Mean of squared residuals: 22128352
-
-#% Var explained: 84.9
-
-library("party")
-
 test_tree <- ctree(exp(charges) ~ ., data=df)
-
 plot(test_tree, type="simple")
