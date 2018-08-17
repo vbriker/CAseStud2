@@ -1,0 +1,145 @@
+---
+title: "Home Work 11"
+author: "Vitaly Briker"
+date: "July 24, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Overview
+Doing Data Science - Preparing Data
+Live session Unit 11 assignment
+
+#Question 1 - Brief Financial Data
+
+#A - part
+
+```{r}
+#Load Libraries
+library(tidyverse)
+library("fpp2")
+library("dygraphs")
+library("xts")
+
+#pull  DAX index
+dax=EuStockMarkets[,1]
+class(EuStockMarkets)
+start(EuStockMarkets)  # print 1st element
+end(EuStockMarkets)    # print last element
+```
+
+#B - part
+```{r}
+ts.plot(dax, col = "blue", 
+        xlab = "Year", ylab = "DAX Index Value", 
+        main = "Major European Stock Indices, 1991-1998")
+abline(v=1997,col="red")#vertical line
+```
+
+#C - part
+```{r}
+decompose_dax = decompose(dax, "multiplicative") # decompose data
+
+Time = attributes(dax)[[1]]
+Time = seq(Time[1],Time[2], length.out=(Time[2]-Time[1])*Time[3])
+
+# Convert td to data frame
+data_decompose = cbind(Time, with(decompose_dax, data.frame(Observed=x, Trend=trend, Seasonal=seasonal, Random=random)))
+
+ggplot(gather(data_decompose, component, value, -Time), aes(Time, value)) +
+  facet_grid(component ~ ., scales="free_y") +
+  geom_line(color="blue") +
+  theme_bw() +
+  labs(y="DAX Index Value", x="Year") +
+  ggtitle("Decomposed DAX - European Stock Indice, 1991-1998") +
+  geom_vline(xintercept=1997,col="red")+
+  theme(plot.title=element_text(hjust=0.5))
+```
+
+#Question 2 Temperature Data
+
+#A,B - part
+
+```{r}
+max_temp=window(maxtemp, start=1991)
+
+plot(max_temp, col = "black", 
+        xlab = "Year", ylab = "Temp (C)", 
+        main = "Maximum annual temperatures at Moorabbin Airport, Melbourne")
+```
+
+#C - part
+
+```{r}
+fit_ses= ses (max_temp,alpha=0.5,initial="optimal",h=5)
+
+plot(fit_ses,PI=FALSE,ylab="Temp (C)", 
+     xlab="Year",main="",fcol="white", type="o")
+
+lines(fitted(fit_ses),col="blue",type="o")
+
+lines(fit_ses$mean,col="blue",type="o")
+```
+
+#D - part
+```{r}
+fit_holt=holt(max_temp,alpha=0.5,beta=0.2,damped=TRUE,initial="optimal",h=5)
+
+plot(fit_holt,PI=FALSE,ylab="Temp (C)", 
+     xlab="Year",main="",fcol="white", type="o")
+
+lines(fitted(fit_holt),col="blue",type="o")
+lines(fit_holt$mean,col="blue",type="o")
+```
+
+#E - part
+
+```{r}
+fit_ses$model
+fit_holt$model
+# Based on the AICc number the SES model is better, sisnce numbers are lower
+```
+
+#Question 3 The Wands Choose the Wizard
+
+#A,B - part
+
+```{r}
+#Read the data
+setwd("F:\\My_Docs\\univer\\DataScience\\unit11")
+greg = read.csv("Unit11TimeSeries_Gregorovitch.csv",header = FALSE)
+colnames(greg) <- c("Date","Wands")
+
+olliv = read.csv("Unit11TimeSeries_Ollivander.csv",header = FALSE)
+colnames(olliv) = c("Date","Wands")
+
+greg$Date = as.Date(greg$Date, "%m/%d/%Y") 
+olliv$Date = as.Date(olliv$Date, "%m/%d/%Y") 
+```
+
+#C - part
+
+```{r}
+#convert into xts format
+greg_xts =xts(greg[,-1], order.by=greg[,1])
+olliv_xts = xts(olliv[,-1], order.by=olliv[,1])
+data_merged=merge(greg_xts,olliv_xts,all=TRUE)
+```
+
+#D - part
+
+```{r}
+dygraph(data_merged, main = "The Wands Choose the Wizard",ylab = "Wands sold", xlab="Year")  %>% 
+dyRangeSelector() %>%
+dySeries("greg_xts", label = "Gregorovitch", color = "blue",strokeWidth = 3) %>%
+dySeries("olliv_xts", label = "Ollivander", color = "red",strokeWidth = 3) %>%
+dyRangeSelector(height = 50) %>%
+dyLegend(width = 400) %>%
+dyHighlight(highlightCircleSize = 5, 
+            highlightSeriesBackgroundAlpha = 0.2,
+            hideOnMouseOut = FALSE) %>%
+dyShading(from = "1995-1-1", to = "1999-1-1",color = "grey")
+```

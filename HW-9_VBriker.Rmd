@@ -1,0 +1,125 @@
+---
+title: "Home Work 9"
+author: "Vitaly Briker"
+date: "July 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Overview
+Doing Data Science - Preparing Data
+Live session Unit 09 assignment
+
+#Question 1 - Harry Potter Cast
+
+```{r}
+#Load Libraries
+library(rvest)
+library(plyr)
+library('dplyr',quietly = TRUE)
+library('ggplot2',quietly = TRUE)
+library(tidyr)
+library(stringr)
+library(XML)
+
+#Read HTML data
+movie_cast_1=read_html("https://www.imdb.com/title/tt1201607/fullcredits?ref_=tt_ql_1")
+
+#using rvest package read Actor list
+cast_frame1=data.frame(movie_cast_1 %>% html_nodes(".itemprop .itemprop") %>% html_text(),header=TRUE)
+
+#clean up and arrangment Actor list
+colnames(cast_frame1) = 'Actor'
+cast_frame1[,2] <- NULL
+cast_frame1 = cast_frame1 %>% mutate(id = row_number()) # creating index column for later sorting
+
+for (i in rownames(cast_frame1)) {  #splitting depending on name "type"
+  count_words=lengths(strsplit(as.character(cast_frame1[i,1]), " "))
+  words = strsplit(as.character(cast_frame1[i,1]), " ")[[1]]
+
+  if (count_words== 2){
+    cast_frame1[i,"FirstName"]=words[1]
+    cast_frame1[i,"SurName"]=words[2]
+  }
+  else if (count_words== 3){
+    cast_frame1[i,"FirstName"]=do.call(paste,as.list(words[1:2]))
+    cast_frame1[i,"SurName"]=words[3]
+  }
+  else{
+    cast_frame1[i,"FirstName"]=do.call(paste,as.list(words[1:2]))
+    cast_frame1[i,"SurName"]=do.call(paste,as.list(words[3:count_words]))
+    }
+}
+cast_frame1["Actor"] <- NULL
+
+head(cast_frame1,10)
+
+#using rvest package read Actor list
+cast_frame2=data.frame(movie_cast_1 %>% html_nodes(".character") %>% html_text(),header=TRUE)
+
+#clean up and arrangment Actor list
+cast_frame2=data.frame(gsub("[\r\n()]", "", cast_frame2[,1])) # remove \r\n
+cast_frame2=data.frame(gsub("(uncredited)", "", cast_frame2[,1])) # remove uncredited
+cast_frame2=data.frame(gsub("archive footage", "", cast_frame2[,1])) # remove archive footage
+cast_frame2=data.frame(gsub("\\s+", " ", cast_frame2[,1])) ## remove spaces
+
+colnames(cast_frame2) = 'Character'
+
+head(cast_frame2,10)
+
+#merge to columns Actors and Characters
+final_table=merge(cast_frame1, cast_frame2, by=0)
+final_table=final_table[with(final_table,order(id)), ]
+final_table["Row.names"] <- NULL
+```
+
+#Print out 10 rows of final table
+```{r}
+head(final_table,10)
+```
+
+
+#Question 2 : SportsBall
+
+```{r}
+#Read HTML
+url="http://www.espn.com/nba/team/stats/_/name/sa/san-antonio-spurs"
+
+#Read Table
+ShootStat=readHTMLTable(url,which=2,as.data.frame = TRUE,header= TRUE,stringsAsFactors=FALSE)
+
+#Clearing data and creating working table
+ShootStat[] <- lapply(ShootStat, as.character)
+colnames(ShootStat) = ShootStat[1, ]   # rename headers with 1st row
+ShootStat <- ShootStat[-1 ,]            # remove 1st row
+ShootStat<- ShootStat[-nrow(ShootStat),] # remove last row
+
+ShootStat=separate(data = ShootStat, col = PLAYER, into = c("Name", "Position"), sep = "\\,")
+
+ShootStat[,3:16] = lapply(ShootStat[,3:16], function(x) as.numeric(as.character(x))) #change to numeric
+
+names(ShootStat)=gsub("%", "", names(ShootStat)) #remove % from headers
+
+ShootStat
+```
+
+#Bar Plot
+```{r}
+#Bar Chart Creation
+FieldPosition=ShootStat$Position
+ggplot(data=ShootStat, aes(y=ShootStat$FG, x=ShootStat$Name, fill=FieldPosition)) +
+  geom_bar(stat="identity",width=0.8)+
+  coord_flip()+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(color="red", size=14, face="bold.italic"),
+    axis.title.x = element_text(color="blue", size=14, face="bold"),
+    axis.title.y = element_text(color="blue", size=14, face="bold"))+
+    ggtitle("San Antonio Spurs Stats - Field Goals Percentage Per Game") +
+           ylab("Field Goals (%)") + xlab("San Antonio Players Names")+
+          theme_bw() +
+          theme(plot.title = element_text(hjust = 0.5))
+```          
