@@ -1,5 +1,4 @@
 
-
 install.packages("psych")
 install.packages("party")
 install.packages("ggplot2")
@@ -8,6 +7,7 @@ install.packages("ggplot2")
 library("ggplot2")
 library("psych")
 library("randomForest")
+library("party")
 
 df <- read.csv("D:\\My_Docs\\univer\\DataScience\\Case_Studies\\Case_Study2\\3\\insurance.csv")
 df$charges_log=log(df$charges)
@@ -49,7 +49,7 @@ pairs.panels(df[c("age" ,"bmi", "children","smoker" , "charges","charges_log")])
 
 # linear model 
 # charges_log=b0+b1*age+b2*age*smoker
-Lin_model <- lm(charges_log ~ age * smoker , data = df)
+Lin_model <- lm(charges_log ~ age + age * smoker , data = df)
 summary(Lin_model)
 
 #creation of train and test data
@@ -104,8 +104,7 @@ print(train_rf)
 
 #% Var explained: 84.9
 
-library("party")
-
 test_tree <- ctree(exp(charges) ~ ., data=df)
 
 plot(test_tree, type="simple")
+
