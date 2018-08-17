@@ -1,15 +1,28 @@
 
+<<<<<<< HEAD
 install.packages("psych")
 install.packages("party")
 install.packages("ggplot2")
+=======
+
+#install.packages("psych")
+#install.packages("party")
+#install.packages("ggplot2")
+#install.packages("dplyr")
+
+>>>>>>> c056b79eca3cdf34b2b34489b5032d35cbc50cc7
 
 
 library("ggplot2")
 library("psych")
 library("randomForest")
+<<<<<<< HEAD
 library("party")
+=======
+library("dplyr")
+>>>>>>> c056b79eca3cdf34b2b34489b5032d35cbc50cc7
 
-df <- read.csv("D:\\My_Docs\\univer\\DataScience\\Case_Studies\\Case_Study2\\3\\insurance.csv")
+df <- read.csv("insurance.csv")
 df$charges_log=log(df$charges)
 
 head(df, n = 5)
@@ -85,9 +98,9 @@ ggplot(data = df_test, aes(x = prediction, y = residuals)) +
 
 
 
-train_rf <- randomForest(charges ~ ., df, ntree=600, na.action = na.roughfix)
-
+train_rf <- randomForest(charges ~ ., df, ntree=100, na.action = na.roughfix)
 print(train_rf)
+<<<<<<< HEAD
 
 #Call:
   
@@ -104,7 +117,8 @@ print(train_rf)
 
 #% Var explained: 84.9
 
+=======
+>>>>>>> c056b79eca3cdf34b2b34489b5032d35cbc50cc7
 test_tree <- ctree(exp(charges) ~ ., data=df)
-
 plot(test_tree, type="simple")
 
