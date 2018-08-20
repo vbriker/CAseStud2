@@ -1,0 +1,183 @@
+---
+title: "Case Study 2"
+author: "Vitaly Briker and William Trevino"
+date: "August 12, 2018"
+output: html_document
+---
+
+## Case Study 2: The cost of being ill in the US
+### Initial review of medical cost use case.
+
+#### Dataset: Medical Cost Personal Datasets
+#### Link: https://www.kaggle.com/mirichoi0218/insurance
+#### Github: https://github.com/vbriker/CAseStud2
+
+### Loading of data and needed libraries
+```{r, echo=TRUE}
+library("ggplot2")
+library("psych")
+library("randomForest")
+library("caret")
+library("dplyr")
+library("DAAG")
+library("party")
+df <- read.csv("insurance.csv")
+str(df)
+df$charges_log <- log(df$charges)
+```
+
+
+
+
+
+### Our client SEM (Super Expensive Medicine) would like to open up shop in the US and wants to maximize profits by targeted ads in the region it decides to move into 
+
+#### First we explorer the variables to gain some insight on how each feature and also find which region has the most chance for profit. 
+```{r, echo=TRUE}
+ggplot(data = df,aes(region,charges)) + 
+  geom_boxplot(fill = c(2:5)) +
+  theme_classic() + 
+  ggtitle("Boxplot of Medical Charges per Region")+
+  ylab("Charges") + xlab("Region")+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data = df,aes(smoker,charges)) + 
+  geom_boxplot(fill = c(2:3)) +
+  theme_classic() + 
+  ggtitle("Boxplot of Medical Charges by Smoking Status")+
+  ylab("Charges") + xlab("Smoking Status")+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data = df,aes(sex,charges)) + geom_boxplot(fill = c(2:3)) +
+  theme_classic() + ggtitle("Boxplot of Medical Charges by Gender")+
+  ylab("Charges") + xlab("Gender")+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data = df,aes(as.factor(children),charges)) + geom_boxplot(fill = c(2:7)) +
+  theme_classic() +  xlab("children") +
+  ggtitle("Boxplot of Medical Charges by Number of Children")+
+  ylab("Charges") + xlab("Number of Children")+
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+#### It seems all regions have a very similar average but south east has a nice third quartile that might make a good group for targeting. 
+
+#### Targeting smokers is a great money making oppurtunity
+
+#### Gender doesn't appear to have as much affect as expected
+
+#### Child count of 3-4 is best.  Large families
+
+
+
+# Test/Train split 
+### Next we split the data to test our models when complete
+
+```{r, echo=TRUE}
+set.seed(18081)
+df_sample <- sample(nrow(df), 0.7 * nrow(df))
+df_train <- df[df_sample,]
+df_test  <- df[-df_sample,]
+```
+
+
+# SEM informs us that since this is medical insurance and cost related all methods and decisions must be reviewed by an ethics committee and thus only models types that are interpretable can be used.  For this reason Linear Regressiona and Random forrest were decided apon.
+
+# Linear model 
+```{r, echo=TRUE}
+Lin_model <- lm(charges_log ~ age * smoker , data = df_train)
+summary(Lin_model)
+Lin_pred <- exp(predict(Lin_model, newdata = df_test))
+R2 <- 1 - (sum((df_test$charges - Lin_pred)^2)/sum((df_test$charges - mean(df_test$charges))^2))
+print(R2)
+```
+
+# Random Forest model 
+```{r, echo=TRUE}
+RF_model <- randomForest(charges ~ . - charges_log, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+RF_pred <- predict(RF_model, newdata = df_test)
+R2 <- 1 - (sum((df_test$charges - RF_pred)^2)/sum((df_test$charges - mean(df_test$charges))^2))
+print(R2)
+```
+
+## Now that we have a decent score from random forest lets attempt to get a "good enough" score with the lowest amount of variables 
+```{r, echo=TRUE}
+RF_model$importance
+
+Lin_model <- lm(charges_log ~ smoker , data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ smoker, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+
+Lin_model <- lm(charges_log ~ smoker + bmi , data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ smoker + bmi, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+
+Lin_model <- lm(charges_log ~ smoker + bmi + age , data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ smoker + bmi + age, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+RF_pred <- predict(RF_model, newdata = df_test)
+R2 <- 1 - (sum((df_test$charges - RF_pred)^2)/sum((df_test$charges - mean(df_test$charges))^2))
+print(R2)
+```
+
+## This is pretty close to our full model but requires less data for our client to acquire. However some data like bmi and smoker might be difficult to aquire easily.
+
+
+## For this we pick easy to acuqire data from social media and other sources
+```{r, echo=TRUE}
+Lin_model <- lm(charges_log ~ age + sex + region , data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ age + sex +region, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+```
+
+## The score is pretty bad so lets mix it with one of the remainnig variables and see if it improves
+```{r, echo=TRUE}
+Lin_model <- lm(charges_log ~ age + sex + region + bmi, data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ age + sex + region + bmi, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+
+Lin_model <- lm(charges_log ~ age + sex + region + smoker, data = df_train)
+summary(Lin_model)
+RF_model <- randomForest(charges ~ age + sex + region + smoker, df_train, ntree=50, na.action = na.roughfix)
+print(RF_model)
+```
+
+## These scores aren't perfect but may be worth considering over purchasing user data from other site.
+
+
+## An executive at SEM is confused about the whole decision tree / random forest thing and asks for a visual example of what one of these looks like.
+```{r, echo=TRUE}
+fit <- ctree(charges ~ smoker + bmi, data=df)
+plot(fit)
+```
+
+
+## In an a final attempt to clasify distinct cost groups we plot Age x Charges and discover what looks like 3 groups 
+```{r, echo=TRUE}
+plot(df$age, df$charges)
+```
+
+## From here we attempt to cluster these groups however we find the cluster lines appear to fall more in tune with price over any other factor.  More data tranformation work mgiht be needed to improve this
+```{r, echo=TRUE}
+df2 <- df
+df2$sex <- as.numeric(df2$sex)
+df2$smoker <- as.numeric(df2$smoker)
+df2$region <- as.numeric(df2$region)
+k_df <- kmeans(df2, centers = 3, nstart = 5)
+k_df$cluster <- as.factor(k_df$cluster)
+ggplot(df, aes(age,charges, color = k_df$cluster)) + geom_point()
+```
+
+
+## Conclusion:  SEM could target medical insurance ads to potential high cost patients with higher premiums or target low cost patience to save money done with just social media data and light effort.  However for best models additional data will need to be purchased or a developer must be hired to scrap additional data and models will need to be regenerated with this addition information. 
